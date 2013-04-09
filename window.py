@@ -106,7 +106,7 @@ class Window(pyglet.window.Window):
 
     def on_resize(self, width, height):
         self.set_light()
-        #self.set_fog()
+        self.set_fog()
         self.set_3d()
         return pyglet.event.EVENT_HANDLED
 
