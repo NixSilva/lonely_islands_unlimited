@@ -14,6 +14,7 @@ class World:
         self.zone_x = None
         self.zone_z = None
         self.terrain_batch = Batch()
+        self.sea_batch = Batch()
 
     def gen_terrain(self, mutex, x, z, patch_size=0.5):
         zone_size = self.zone_size
@@ -25,6 +26,7 @@ class World:
         zmin = (z - 0.5) * zone_size
         zmax = (z + 0.5) * zone_size
         v = []
+        v_sea = []
         n = []
         c = []
         for i in np.linspace(xmin, xmax, w):
@@ -32,8 +34,10 @@ class World:
             for j in np.linspace(zmin, zmax, w):
                 y = self.get_v(i, j)
                 vv = [i, y, j]
+                vv_sea = [i, 0.0, j]
                 nn = self.get_n(i, j)
                 v += vv
+                v_sea += vv_sea
                 n += nn
                 if y > 10.0:
                     c += [255, 255, 255]
@@ -53,7 +57,7 @@ class World:
                     i + j * w + 1,
                     i + j * w + 1 + w,
                     i + j * w + w]
-        data = [index, v, n, c]
+        data = [index, v, n, c, v_sea]
         mutex.acquire()
         self.current_lists[(x, z)] = data
         mutex.release()
@@ -61,6 +65,7 @@ class World:
 
     def draw(self):
         self.terrain_batch.draw()
+        self.sea_batch.draw()
 
     def zone_lists_changed(self):
         tmp_lists = self.current_lists.copy()
@@ -75,18 +80,41 @@ class World:
         player_z = int(np.floor(self.player.position[2] / size + 0.5))
         return (player_x != self.zone_x or player_z != self.zone_z)
 
-    def update_batch(self):
-        tmp_lists = self.current_lists.copy()
+    def draw_terrain(self):
         self.terrain_batch = Batch()
+        tmp_lists = self.current_lists.copy()
         for i in tmp_lists:
             l = tmp_lists[i]
             w2 = len(l[1]) / 3
             vlist = self.terrain_batch.add_indexed(
-                w2, GL_QUADS, None,
-                l[0],
-                ('v3f/static', l[1]),
-                ('n3f/static', l[2]),
+                w2, GL_QUADS, None, l[0],
+                ('v3f/static', l[1]), ('n3f/static', l[2]),
                 ('c3B/static', l[3]))
+
+    def draw_sea(self):
+        self.sea_batch = Batch()
+        tmp_lists = self.current_lists.copy()
+        for i in tmp_lists:
+            l = tmp_lists[i]
+            w2 = len(l[4]) / 3
+            n = [0, 0, 255] * w2
+            vlist = self.sea_batch.add_indexed(
+                w2, GL_QUADS, None, l[0],
+                ('v3f/static', l[4]), ('n3f/static', n),
+                ('c3B/static', l[3]))
+
+    def draw_sea_simple(self):
+        tmp_lists = self.current_lists.copy()
+        v = [minx, 0, minz, minx, 0, maxz, maxx, 0, maxz, maxx, 0, minz]
+        n = [0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0]
+        c = [0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255]
+        self.sea_batch = Batch()
+        self.sea_batch.add(4, GL_QUADS, None, ('v3f/static', v),
+                           ('n3f/static', n), ('c3B/static', c))
+
+    def update_batch(self):
+        self.draw_sea()
+        self.draw_terrain()
 
     def update_zone_lists(self):
         size = self.zone_size
