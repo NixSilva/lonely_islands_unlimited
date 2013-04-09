@@ -4,20 +4,24 @@ from noise import pnoise2
 import numpy as np
 import threading
 import time
+import random
 
 
 class World:
     def __init__(self):
         self.current_lists = {}
         self.old_lists = {}
-        self.zone_size = 20.0
+        self.zone_size = 30.0
+        self.patch_size = 0.5
         self.zone_x = None
         self.zone_z = None
         self.terrain_batch = Batch()
         self.sea_batch = Batch()
+        self.tree_batch = Batch()
 
-    def gen_terrain(self, mutex, x, z, patch_size=0.5):
+    def gen_terrain(self, mutex, x, z):
         zone_size = self.zone_size
+        patch_size = self.patch_size
         w = zone_size / patch_size + 1
         assert w == int(w)
         w = int(w)
@@ -29,6 +33,7 @@ class World:
         v_sea = []
         n = []
         c = []
+        t = []
         for i in np.linspace(xmin, xmax, w):
             time.sleep(0.2)
             for j in np.linspace(zmin, zmax, w):
@@ -45,6 +50,8 @@ class World:
                     c += [255, 120, 0]
                 elif y > 1.0:
                     c += [0, 255, 0]
+                    if random.random() > 0.5:
+                        t.append([i, y, j])
                 elif y > 0.0:
                     c += [255, 255, 150]
                 else:
@@ -57,7 +64,7 @@ class World:
                     i + j * w + 1,
                     i + j * w + 1 + w,
                     i + j * w + w]
-        data = [index, v, n, c, v_sea]
+        data = [index, v, n, c, v_sea, t]
         mutex.acquire()
         self.current_lists[(x, z)] = data
         mutex.release()
@@ -66,6 +73,7 @@ class World:
     def draw(self):
         self.terrain_batch.draw()
         self.sea_batch.draw()
+        self.tree_batch.draw()
 
     def zone_lists_changed(self):
         tmp_lists = self.current_lists.copy()
@@ -80,28 +88,22 @@ class World:
         player_z = int(np.floor(self.player.position[2] / size + 0.5))
         return (player_x != self.zone_x or player_z != self.zone_z)
 
-    def draw_terrain(self):
-        self.terrain_batch = Batch()
-        tmp_lists = self.current_lists.copy()
-        for i in tmp_lists:
-            l = tmp_lists[i]
-            w2 = len(l[1]) / 3
-            vlist = self.terrain_batch.add_indexed(
-                w2, GL_QUADS, None, l[0],
-                ('v3f/static', l[1]), ('n3f/static', l[2]),
-                ('c3B/static', l[3]))
+    def draw_terrain(self, l, w2):
+        vlist = self.terrain_batch.add_indexed(
+            w2, GL_QUADS, None, l[0],
+            ('v3f/static', l[1]), ('n3f/static', l[2]),
+            ('c3B/static', l[3]))
 
-    def draw_sea(self):
-        self.sea_batch = Batch()
-        tmp_lists = self.current_lists.copy()
-        for i in tmp_lists:
-            l = tmp_lists[i]
-            w2 = len(l[4]) / 3
-            n = [0, 0, 255] * w2
-            vlist = self.sea_batch.add_indexed(
-                w2, GL_QUADS, None, l[0],
-                ('v3f/static', l[4]), ('n3f/static', n),
-                ('c3B/static', l[3]))
+    def draw_sea(self, l, w2):
+        n = [0, 0, 255] * w2
+        vlist = self.sea_batch.add_indexed(
+            w2, GL_QUADS, None, l[0],
+            ('v3f/static', l[4]), ('n3f/static', n),
+            ('c3B/static', l[3]))
+
+    def draw_tree(self, l, w2):
+        for [x, y, z] in l[5]:
+            self.add_tree(self.tree_batch, x, y, z)
 
     def draw_sea_simple(self):
         tmp_lists = self.current_lists.copy()
@@ -113,8 +115,16 @@ class World:
                            ('n3f/static', n), ('c3B/static', c))
 
     def update_batch(self):
-        self.draw_sea()
-        self.draw_terrain()
+        self.terrain_batch = Batch()
+        self.sea_batch = Batch()
+        self.tree_batch = Batch()
+        tmp_lists = self.current_lists.copy()
+        for i in tmp_lists:
+            l = tmp_lists[i]
+            w2 = len(l[1]) / 3
+            self.draw_sea(l, w2)
+            self.draw_terrain(l, w2)
+            self.draw_tree(l, w2)
 
     def update_zone_lists(self):
         size = self.zone_size
@@ -153,13 +163,13 @@ class World:
         return
 
     def get_v(self, x, z):
-        ratio = 0.02
+        ratio = 0.01
         ratio2 = 50.0
         #return 0.0
-        return pnoise2(x*ratio, z*ratio, 4)*ratio2
+        return pnoise2(x*ratio, z*ratio, 5, persistence=0.5)*ratio2
 
     def get_n(self, x, z):
-        d = 0.01
+        d = self.patch_size / 50.0
         dydx = (self.get_v(x+d, z) - self.get_v(x-d, z)) / (2 * d)
         dydz = (self.get_v(x, z+d) - self.get_v(x, z-d)) / (2 * d)
         n = -np.cross([1.0, dydx, 0.0], [0.0, dydz, 1.0])

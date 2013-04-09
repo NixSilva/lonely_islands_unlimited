@@ -9,8 +9,8 @@ class Player:
         self.velocity = np.asarray([0.0, 0.0, 0.0])
         self.mvector = np.asarray([0.0, 0.0])
         self.norm_vector = np.asarray([0.0, 0.0])
-        self.height = 1.8
-        self.speed = 0.5
+        self.height = 0.18
+        self.speed = 5.0
 
     def update(self, dt):
         l = np.sqrt(sum(np.asarray(self.mvector)**2))
@@ -32,4 +32,4 @@ class Player:
             dy = 0.0
             self.position[1] = floor + self.height
         self.velocity = [dx, dy, dz]
-        self.position += [i * self.speed for i in self.velocity]
+        self.position += [i * self.speed * dt for i in self.velocity]

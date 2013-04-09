@@ -82,7 +82,7 @@ class Window(pyglet.window.Window):
         glFogi(GL_FOG_MODE, GL_LINEAR)
         glFogf(GL_FOG_DENSITY, 0.55)
         glFogf(GL_FOG_START, 0.0)
-        glFogf(GL_FOG_END, 30.0)
+        glFogf(GL_FOG_END, 100.0)
 
     def set_3d(self):
         width = self.width
