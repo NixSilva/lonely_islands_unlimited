@@ -5,13 +5,14 @@ import li_world
 import li_player
 import pyglet
 
+
 def update(dt):
     player.update(dt)
     world.update(dt)
 
 if __name__ == '__main__':
     player = li_player.Player()
-    world  = li_world.World()
+    world = li_world.World()
     world.player = player
     player.world = world
     window = li_window.Window(player, world)

@@ -5,6 +5,7 @@ import numpy as np
 import threading
 import time
 
+
 class World:
     def __init__(self):
         self.current_lists = {}
@@ -14,8 +15,7 @@ class World:
         self.zone_z = None
         self.terrain_batch = Batch()
 
-    def gen_terrain(self, mutex, x, z,
-            patch_size = 0.5):
+    def gen_terrain(self, mutex, x, z, patch_size=0.5):
         zone_size = self.zone_size
         w = zone_size / patch_size + 1
         assert w == int(w)
@@ -30,7 +30,7 @@ class World:
         for i in np.linspace(xmin, xmax, w):
             time.sleep(0.2)
             for j in np.linspace(zmin, zmax, w):
-                y  = self.get_v(i, j)
+                y = self.get_v(i, j)
                 vv = [i, y, j]
                 nn = self.get_n(i, j)
                 v += vv
@@ -46,12 +46,16 @@ class World:
                 else:
                     c += [0, 0, 255]
         index = []
-        for i in range(0,w-1):
-            for j in range(0,w-1):
-                index += [i+j*w, i+j*w+1, i+j*w+w+1, i+j*w+w]
+        for i in range(0, w-1):
+            for j in range(0, w-1):
+                index += [
+                    i + j * w,
+                    i + j * w + 1,
+                    i + j * w + 1 + w,
+                    i + j * w + w]
         data = [index, v, n, c]
         mutex.acquire()
-        self.current_lists[(x,z)] = data
+        self.current_lists[(x, z)] = data
         mutex.release()
         #np.savez('save/{0}_{1}.npz'.format(x,z), data)
 
@@ -77,13 +81,13 @@ class World:
         for i in tmp_lists:
             l = tmp_lists[i]
             w2 = len(l[1]) / 3
-            vlist = self.terrain_batch.add_indexed(w2, GL_QUADS, None,
-                    l[0],
-                    ('v3f/static', l[1]),
-                    ('n3f/static', l[2]),
-                    ('c3B/static', l[3]),
-                    )
-    
+            vlist = self.terrain_batch.add_indexed(
+                w2, GL_QUADS, None,
+                l[0],
+                ('v3f/static', l[1]),
+                ('n3f/static', l[2]),
+                ('c3B/static', l[3]))
+
     def update_zone_lists(self):
         size = self.zone_size
         player_x = int(np.floor(self.player.position[0] / size + 0.5))
@@ -91,7 +95,7 @@ class World:
         new_set = set()
         for i in range(player_x - 1, player_x + 2):
             for j in range(player_z - 1, player_z + 2):
-                new_set.add((i,j))
+                new_set.add((i, j))
 
         to_be_deleted = set()
         for i in self.current_lists:
@@ -103,7 +107,9 @@ class World:
             if i not in self.current_lists:
                 x, z = i
                 print 'Generating:', i
-                threading.Thread(target=self.gen_terrain, args=(mutex, x, z)).start()
+                threading.Thread(
+                    target=self.gen_terrain,
+                    args=(mutex, x, z)).start()
 
         for i in to_be_deleted:
             self.current_lists.pop(i)
@@ -132,29 +138,26 @@ class World:
         return list(n)
 
     def add_tree(self, batch, x, y, z):
-        batch.add(6, GL_TRIANGLES, None,
-                ('v3f/static', (
-                    -0.2+x, y, 0.0+z,
-                    0.0+x, y+0.4, 0.0+z,
-                    0.2+x, y, 0.0+z,
-                    0.0+x, y,-0.2+z, 
-                    0.0+x, y+0.4, 0.0+z, 
-                    0.0+x, y, 0.2+z, 
-                    )),
-                ('c3B/static', (
-                    0, 255, 0,
-                    0, 255, 0,
-                    0, 255, 0,
-                    0, 255, 0,
-                    0, 255, 0,
-                    0, 255, 0,
-                    )),
-                ('n3f/static',(
-                    0.0, 0.0, 1.0,
-                    0.0, 0.0, 1.0,
-                    0.0, 0.0, 1.0,
-                    1.0, 0.0, 0.0,
-                    1.0, 0.0, 0.0,
-                    1.0, 0.0, 0.0,
-                    )))
-
+        batch.add(
+            6, GL_TRIANGLES, None,
+            ('v3f/static', (
+                -0.2+x, y, 0.0+z,
+                0.0+x, y+0.4, 0.0+z,
+                0.2+x, y, 0.0+z,
+                0.0+x, y, -0.2+z,
+                0.0+x, y+0.4, 0.0+z,
+                0.0+x, y, 0.2+z,)),
+            ('c3B/static', (
+                0, 255, 0,
+                0, 255, 0,
+                0, 255, 0,
+                0, 255, 0,
+                0, 255, 0,
+                0, 255, 0,)),
+            ('n3f/static', (
+                0.0, 0.0, 1.0,
+                0.0, 0.0, 1.0,
+                0.0, 0.0, 1.0,
+                1.0, 0.0, 0.0,
+                1.0, 0.0, 0.0,
+                1.0, 0.0, 0.0,)))

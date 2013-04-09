@@ -5,15 +5,16 @@ from pyglet.gl import *
 from pyglet.window import key
 from pyglet.window import mouse
 
+
 class Window(pyglet.window.Window):
 
     def __init__(self, player, world, *args, **kwargs):
         super(Window, self).__init__(*args, **kwargs)
         self.player = player
         self.world = world
+
     def vec(self, *args):
         return (GLfloat * len(args))(*args)
-
 
     def on_mouse_motion(self, x, y, dx, dy):
         m = 0.15
@@ -25,7 +26,7 @@ class Window(pyglet.window.Window):
         self.player.rotation = (x, y)
 
     def on_key_press(self, symbol, modifiers):
-        if   symbol == key.W:
+        if symbol == key.W:
             self.player.mvector[0] += 1
         elif symbol == key.S:
             self.player.mvector[0] -= 1
@@ -40,7 +41,7 @@ class Window(pyglet.window.Window):
             #TODO: Use super key routine
 
     def on_key_release(self, symbol, modifiers):
-        if   symbol == key.W:
+        if symbol == key.W:
             self.player.mvector[0] -= 1
         elif symbol == key.S:
             self.player.mvector[0] += 1
@@ -63,16 +64,16 @@ class Window(pyglet.window.Window):
     def set_light(self):
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT1)
-        glMaterialfv(GL_FRONT, GL_SHININESS, self.vec(50.0));
-        glMaterialfv(GL_FRONT, GL_SPECULAR, self.vec(1.0, 1.0, 1.0, 1.0));
-        glMaterialfv(GL_FRONT, GL_DIFFUSE, self.vec(1.0, 1.0, 1.0, 1.0));
-        glMaterialfv(GL_FRONT, GL_AMBIENT, self.vec(1.0, 1.0, 1.0, 1.0));
+        glMaterialfv(GL_FRONT, GL_SHININESS, self.vec(50.0))
+        glMaterialfv(GL_FRONT, GL_SPECULAR, self.vec(1.0, 1.0, 1.0, 1.0))
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, self.vec(1.0, 1.0, 1.0, 1.0))
+        glMaterialfv(GL_FRONT, GL_AMBIENT, self.vec(1.0, 1.0, 1.0, 1.0))
         glLightfv(GL_LIGHT1, GL_AMBIENT, self.vec(0.1, 0.1, 0.1, 1.0))
         glLightfv(GL_LIGHT1, GL_DIFFUSE, self.vec(0.5, 0.5, 0.5, 1.0))
         glLightfv(GL_LIGHT1, GL_SPECULAR, self.vec(1.0, 1.0, 1.0, 1.0))
         glLightfv(GL_LIGHT1, GL_POSITION, self.vec(100.0, 100.0, 100.0, 1.0))
-        glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-        glEnable(GL_COLOR_MATERIAL);
+        glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
+        glEnable(GL_COLOR_MATERIAL)
 
     def set_fog(self):
         glEnable(GL_FOG)
@@ -117,4 +118,3 @@ class Window(pyglet.window.Window):
         #label.text = str(pyglet.clock.get_fps())
         #label.text = str(self.player.rotation)
         #label.draw()
-
